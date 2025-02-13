@@ -23,5 +23,6 @@ urlpatterns = [
     path('credits/', home_views.credits),
     path('news/', home_views.news, name='news'),
     path('bands/', include("bands.urls")),
-    path('accounts/', include('django.contrib.auth.urls'))
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('content/', include('content.urls')),
 ]
