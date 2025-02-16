@@ -130,3 +130,12 @@ LOGIN_REDIRECT_URL = '/bands/bands/'
 LOGOUT_REDIRECT_URL = '/bands/bands/'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = (BASE_DIR / 'static',)
+
+LOGOUT_REDIRECT_URL = '/'
+LOGIN_REDIRECT_URL = '/'
+
+MEDIA_ROOT = BASE_DIR.parent / 'outside/RiffMates/uploads'
+MEDIA_URL = '/media/'
