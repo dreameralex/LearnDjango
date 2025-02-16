@@ -72,16 +72,29 @@ def seeking_ad(request, ad_id=0):
     if request.method == 'GET':
         if ad_id == 0:
             form = SeekingAdForm()
+        elif request.user.is_staff:
+            ad = get_object_or_404(SeekingAd, id=ad_id)
+            form = SeekingAdForm(instance=ad)
         else:
             ad = get_object_or_404(SeekingAd, id=ad_id, owner=request.user)
             form = SeekingAdForm(instance=ad)
-
+    elif request.user.is_staff:
+        ad = get_object_or_404(SeekingAd, id=ad_id)
+        form = SeekingAdForm(request.POST, instance=ad)
     else: # POST
         if ad_id == 0:
             form = SeekingAdForm(request.POST)
+
         else:
             ad = get_object_or_404(SeekingAd, id=ad_id, owner=request.user)
             form = SeekingAdForm(request.POST, instance=ad)
+
+    if form.is_valid():
+        ad = form.save(commit=False)
+        ad.owner = request.user
+        ad.save()
+
+        return redirect("list_ads")
 
     # Was a GET, or Form was not valid
     data = {

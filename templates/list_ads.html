@@ -4,9 +4,10 @@
 {% block content %}
     <h1>Musicians Seeking Bands </h1>
     {% for ad in seeking_band %}
-        {% if ad.owner == request.user %}
+        {% if ad.owner == request.user or request.user.is_staff %}
             <a href="{% url 'edit_seeking_ad' ad.id %}">Edit</a>
         {% endif %}
+
         <p>
             {{ad.date}} &mdash;
             {{ad.musician.first_name}} {{ad.musician.last_name}}
@@ -19,9 +20,10 @@
 
     <h1>Bands Seeking Musicians </h1>
     {% for ad in seeking_musician %}
-        {% if ad.owner == request.user %}
+        {% if ad.owner == request.user or request.user.is_staff %}
             <a href="{% url 'edit_seeking_ad' ad.id %}">Edit</a>
         {% endif %}
+
         <p>
             {{ad.date}} &mdash; {{ad.band.name}}
             <br/>

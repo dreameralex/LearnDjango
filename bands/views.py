@@ -6,14 +6,30 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from bands.forms import VenueForm
+from bands.forms import VenueForm, MusicianForm
+from django.contrib.auth.decorators import user_passes_test
 
 def musician(request, musician_id):
     musician = get_object_or_404(Musician, id=musician_id)
+    musician.controller = False
+    if request.user.is_staff:
+        musician.controller = True
+    elif hasattr(request.user, "userprofile"):
+        # This view can be used by people who aren't logged in,
+        # those users don't have a profile, need to validate
+        # one exists before using it
+        profile = request.user.userprofile
+        musician.controller = profile.musician_profiles.filter(
+            id=musician_id
+        ).exists()
+
     data = {
         "musician": musician,
     }
     return render(request, "musician.html", data)
+
+
+
 
 def _get_items_per_page(request):
     # Determine how many items to show per page, disallowing <1 or >50
@@ -34,7 +50,7 @@ def _get_page_num(request, paginator):
     return page_num
 
 
-def musicians(request):
+def musicians(request, musician_id=0):
     all_musicians = Musician.objects.all().order_by('last_name')
     paginator = Paginator(all_musicians, 2)
 
@@ -54,6 +70,43 @@ def musicians(request):
     }
 
     return render(request, "musicians.html", data)
+
+
+def edit_musician(request, musician_id=0):
+    if musician_id != 0:
+        musician = get_object_or_404(Musician, id=musician_id)
+        if (
+            not request.user.is_staff
+            and not request.user.userprofile.musician_profiles.filter(id=musician_id).exists()
+        ):
+            raise Http404("Can only edit controlled musicians")
+
+    if request.method == "GET":
+        if musician_id == 0:
+            form = MusicianForm()
+        else:
+            form = MusicianForm(instance=musician)
+    else: # POST
+        if musician_id == 0:
+            musician = Musician.objects.create(birth=date(1900, 1, 1))
+
+        form = MusicianForm(request.POST, request.FILES,
+            instance=musician)
+
+        if form.is_valid():
+            musician = form.save()
+
+        # Add the musician to the user's profile if this isn't staff
+        if not request.user.is_staff:
+            request.user.userprofile.musician_profiles.add(musician)
+            return redirect("musicians")
+
+    # Was a GET, or Form was not valid
+    data = {
+        "form": form,
+    }
+    return render(request, "edit_musician.html", data)
+
 
 @login_required
 def restricted_page(request):
@@ -180,3 +233,12 @@ def edit_venue(request, venue_id=0):
     }
 
     return render(request, "edit_venue.html", data)
+
+def has_venue(user):
+    try:
+        return user.userprofile.venues_controlled.count() > 0
+    except AttributeError:
+        return False
+@user_passes_test(has_venue)
+def venues_restricted(request):
+    return venues(request)
