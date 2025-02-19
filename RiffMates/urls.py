@@ -19,6 +19,15 @@ from django.urls import path, include
 from home import views as home_views
 from django.conf import settings
 from django.conf.urls.static import static
+from ninja import NinjaAPI
+from home.api import router as home_router
+from promoters.api import router as promoters_router
+from bands.api import router as bands_router
+
+api = NinjaAPI(version="1.0")
+api.add_router("/home/", home_router)
+api.add_router("/promoters/", promoters_router)
+api.add_router("/bands/", bands_router)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -28,7 +37,10 @@ urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('content/', include('content.urls')),
     path("", home_views.home, name="home"),
+    path("api/v1/", api.urls),
+
 ]
+
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,
     document_root=settings.MEDIA_ROOT)
